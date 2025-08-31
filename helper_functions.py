@@ -7,6 +7,21 @@ import torch
 from collections import Counter
 import pandas as pd
 from tqdm.notebook import tqdm
+import torchvision.transforms as T
+
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+class_names = ['cbb', 'cbsd', 'cgm', 'cmd', 'healthy']
+class_names_dict =  {
+    "cbb": "Cassava Bacterial Blight",
+    "cbsd": "Cassava Brown Streak Disease",
+    "cgm": "Cassava Green Mite",
+    "cmd": "Cassava Mosaic Disease",
+    "healthy": "Healthy (No Disease)"
+}
+
+train_transforms = T.Compose([T.Resize((320, 320)), T.RandomResizedCrop(300, scale=(0.8, 1.0)),
+    T.RandomHorizontalFlip(),T.ToTensor(), T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
+best_trained_model = torch.load('best_cassava_model.pth', map_location=device)
 
 
 def plot_random_images(train_dir, classes, nrows, ncols):  
@@ -132,4 +147,47 @@ def train(model, optimizer, loss_fn, train_loader, val_loader, epochs=20, device
 
     return train_losses, val_losses, train_accuracies, val_accuracies
 
+
+
+def unnormalize_image(img, mean= [0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]):
+        mean = torch.tensor(mean).view(1, 1, -1)
+        std = torch.tensor(std).view(1, 1, -1)
+        return img.permute(1, 2, 0) * std + mean
+
+
+def make_prediction(model, dataset):
+    correct = 0
+    random_idx = random.choice(range(len(dataset)))
+    # preds, actual_labels, all_images = [], [], []
+    random_img, random_label = dataset[random_idx]
+    random_img = random_img.to(device)
+    with torch.no_grad():
+        output = model(random_img.unsqueeze(0))
+        pred = output.argmax().item()
+        predicted_label = class_names[pred]
+        actual_label = class_names[random_label]
+    
+    
+        
+    unnormalized_img = unnormalize_image(random_img)
+    
+    fig, ax = plt.subplots(figsize=(3,3))
+    fig.tight_layout()
+    ax.imshow(unnormalized_img)
+    color = 'green' if predicted_label == actual_label else 'red'
+    ax.set_title(f'Actual: {actual_label}\n Pred:{predicted_label}', fontsize=12, color=color)
+    ax.axis('off')
+
+
+def run_prediction(img_path, model=best_trained_model):
+        user_img = train_transforms(Image.open(img_path).convert('RGB'))
+        pred = torch.argmax(model(user_img.unsqueeze(0))).item()
+        prediction = class_names[pred]
+        unnormalized_user_img= unnormalize_image(user_img)
+        fig, ax = plt.subplots()
+        ax.imshow(unnormalized_user_img)
+        ax.axis('off')
+        ax.set_title(f'Predicted: {prediction}')
+        fig.show()
+        return prediction, class_names_dict[prediction];
 
