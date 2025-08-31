@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>CassavaVision</title>
+    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+     <!-- <link rel='stylesheet' href='static/style.css'> -->
+    <link rel="shortcut icon" href="{{ url_for('static', filename='cv_icon.png') }}" type="image/x-icon">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Poppins:wght@500;700&display=swap" rel="stylesheet">
+  
+</head>
+<body>
+  <div class="bg-anim" aria-hidden="true"></div>
+
+  <button id="themeToggle" class="theme-toggle" aria-label="Toggle theme">🌙</button>
+
+  <div class="container" role="main" aria-live="polite">
+    <section class="panel" aria-labelledby="panel-title">
+      <div class="brand" role="banner">
+        <div class="logo">CV</div>
+        <div>
+          <h1>CassavaVision</h1>
+          <p>Instant plant disease detection — upload a leaf and get a prediction</p>
+        </div>
+      </div>
+
+      <div class="hero" aria-hidden="true">
+        <div>
+          <div class="greet" id="greet">Welcome 👋</div>
+          <div class="sub">Smart. Fast. Explainable. Try a clear photo for best results.</div>
+        </div>
+        <div class="clock" id="clock">--:--:--</div>
+      </div>
+
+      <div class="upload-card" id="uploadCard">
+        <h2>Upload an Image for Prediction</h2>
+
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <form id="uploadForm" method="POST" enctype="multipart/form-data" style="display:flex; gap:10px; align-items:center; width:100%;">
+            <label class="file-label" for="nativeFile">
+              <svg class="icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="color:inherit">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 5 17 10"></polyline>
+                <line x1="12" y1="5" x2="12" y2="18"></line>
+              </svg>
+              Choose Image
+            </label>
+
+            <div id="fileName" class="file-name">No file chosen</div>
+
+            <button class="submit-btn" type="submit">Upload</button>
+
+            <input id="nativeFile" class="native-file" name="file" type="file" accept="image/*">
+          </form>
+        </div>
+
+        {% if filepath %}
+            {% if short_pred == 'healthy' %}
+                <div class="prediction" style="color: rgb(81, 239, 81);">Congratulations, your cassava plant is helathy! </div>
+            {% elif short_pred == 'cbb' %}
+                <div class="prediction" style="color: red;">Oops, your cassava plant is infected with {{ full_pred }}. You can read more about it <a href="https://en.wikipedia.org/wiki/Bacterial_blight_of_cassava" style="color: rgb(255, 48, 48);">here.</a></div>
+            {% elif short_pred == 'cbsd' %}
+                <div class="prediction" style="color: red;">Oops, your cassava plant is infected with {{ full_pred }}. You can read more about it <a href="https://en.wikipedia.org/wiki/Cassava_brown_streak_virus_disease" style="color: rgb(255, 48, 48);">here.</a></div>
+            {% elif short_pred == 'cgm' %}
+                <div class="prediction" style="color: red;">Oops, your cassava plant is infected with {{ full_pred }}. You can read more about it <a href="https://plantwiseplusknowledgebank.org/doi/full/10.1079/pwkb.20227800039" style="color: rgb(255, 48, 48);">here.</a></div>
+            {% elif short_pred == 'cmd' %}
+                <div class="prediction" style="color: red;">Oops, your cassava plant is infected with {{ full_pred }}. You can read more about it <a href="https://en.wikipedia.org/wiki/Cassava_mosaic_viruses" style="color: rgb(255, 48, 48);">here.</a></div>
+            {% endif %}
+          
+          <div class="preview-image">
+            <img src="{{ filepath }}" alt="Uploaded Image">
+          </div>
+        {% endif %}
+      </div>
+    </section>
+
+    <aside class="sidebar" aria-labelledby="side-title">
+      <div class="side-title">Status</div>
+      <div style="color:var(--muted); text-align:center; padding:8px 12px; border-radius:10px; background: rgba(255,255,255,0.02);">Ready to upload</div>
+      <div style="height:8px"></div>
+      <div class="side-title" style="font-size:0.9rem">Recent</div>
+      <div style="width:100%; display:flex; justify-content:center"><div style="color:var(--muted-2); font-size:0.85rem;">No recent uploads</div></div>
+      <div class="footer">Built with ❤️ • CassavaVision</div>
+    </aside>
+  </div>
+
+<script>
+const themeToggle = document.getElementById('themeToggle');
+(function initTheme(){
+  const saved = localStorage.getItem('cv-theme') || 'dark';
+  if(saved === 'light') document.documentElement.classList.add('light');
+  themeToggle.textContent = (saved === 'light') ? '🌙' : '☀️';
+})();
+themeToggle.addEventListener('click', ()=>{
+  const isLight = document.documentElement.classList.toggle('light');
+  localStorage.setItem('cv-theme', isLight ? 'light' : 'dark');
+  themeToggle.textContent = isLight ? '🌙' : '☀️';
+});
+
+const clockEl = document.getElementById('clock'), greetEl = document.getElementById('greet');
+function updateClock(){ const now=new Date(); clockEl.textContent = `${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}`; const h=now.getHours(); greetEl.textContent = (h<12)?'Good morning ☀️':(h<18)?'Good afternoon ☀️':'Good evening 🌙'; }
+setInterval(updateClock,1000); updateClock();
+
+const nativeFile = document.getElementById('nativeFile');
+const fileName = document.getElementById('fileName');
+
+// document.querySelector('.file-label').addEventListener('click', ()=> nativeFile.click());
+
+nativeFile.addEventListener('change', (e)=>{
+  const f = e.target.files && e.target.files[0];
+  if(!f){ fileName.textContent = 'No file chosen'; return; }
+  if(!f.type.startsWith('image/')) { alert('Please choose an image file'); nativeFile.value=''; fileName.textContent='No file chosen'; return; }
+  const display = (f.name.length > 28) ? (f.name.slice(0,18) + '…' + f.name.slice(-8)) : f.name;
+  fileName.textContent = `${display} • ${Math.round(f.size/1024)}KB`;
+
+
+//   const url = URL.createObjectURL(f);
+//   const previewContainer = document.querySelector('.upload-card .preview-image');
+//   if(previewContainer){
+//     previewContainer.innerHTML = `<img src="${url}" alt="${f.name}">`;
+//   } else {
+//     const node = document.createElement('div'); node.className='preview-image'; node.innerHTML = `<img src="${url}" alt="${f.name}">`;
+//     document.getElementById('uploadCard').appendChild(node);
+//   }
+});
+
+/* Keep layout centered on resize */
+window.addEventListener('resize', ()=> { document.documentElement.style.height = window.innerHeight + 'px'; });
+</script>
+</body>
+</html>
