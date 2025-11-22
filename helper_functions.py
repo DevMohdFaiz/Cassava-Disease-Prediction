@@ -22,8 +22,10 @@ disease_dict =  {
 
 train_transforms = T.Compose([T.Resize((320, 320)), T.RandomResizedCrop(300, scale=(0.8, 1.0)),
     T.RandomHorizontalFlip(),T.ToTensor(), T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
-best_trained_model = torch.load('models/best_cassava_model.pth', map_location=device)
-
+try:
+    best_trained_model = torch.load('models/best_cassava_model.pth', map_location=device)
+except: 
+    best_trained_model = torch.load('best_cassava_model.pth', map_location=device)
 
 def plot_random_images(train_dir, classes, nrows, ncols):  
         """
