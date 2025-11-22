@@ -6,7 +6,6 @@ app = Flask(__name__)
 uploads_folder = 'static/uploads'
 Path(uploads_folder).mkdir(exist_ok=True)
 app.config['UPLOAD_FOLDER'] = uploads_folder
-# Path(app.config['UPLOAD_FOLDER']).mkdir(exist_ok=True)
 
 @app.route('/', methods= ['GET', 'POST'])
 def index():

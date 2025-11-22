@@ -1,17 +1,18 @@
-import matplotlib.pyplot as plt
+import random
 import os
+import torch
+import matplotlib.pyplot as plt
+import torchvision.transforms as T
+import pandas as pd
 from PIL import Image
 from pathlib import Path
-import random
-import torch
 from collections import Counter
-import pandas as pd
 from tqdm.notebook import tqdm
-import torchvision.transforms as T
+from typing import Tuple, Union
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
-class_names = ['cbb', 'cbsd', 'cgm', 'cmd', 'healthy']
-class_names_dict =  {
+disease_names = ['cbb', 'cbsd', 'cgm', 'cmd', 'healthy']
+disease_dict =  {
     "cbb": "Cassava Bacterial Blight",
     "cbsd": "Cassava Brown Streak Disease",
     "cgm": "Cassava Green Mite",
@@ -21,7 +22,7 @@ class_names_dict =  {
 
 train_transforms = T.Compose([T.Resize((320, 320)), T.RandomResizedCrop(300, scale=(0.8, 1.0)),
     T.RandomHorizontalFlip(),T.ToTensor(), T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
-best_trained_model = torch.load('best_cassava_model.pth', map_location=device)
+best_trained_model = torch.load('models/best_cassava_model.pth', map_location=device)
 
 
 def plot_random_images(train_dir, classes, nrows, ncols):  
@@ -41,8 +42,7 @@ def plot_random_images(train_dir, classes, nrows, ncols):
                 axis.set_xticks([])
                 axis.set_yticks([])
                 axis.set_title(f'{random_image.parent.stem}, {img_name.mode}', fontsize=9)
-        
-
+      
 
 def class_counts(dataset):
     c = Counter(x[1] for x in tqdm(dataset))
@@ -150,9 +150,9 @@ def train(model, optimizer, loss_fn, train_loader, val_loader, epochs=20, device
 
 
 def unnormalize_image(img, mean= [0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]):
-        mean = torch.tensor(mean).view(1, 1, -1)
-        std = torch.tensor(std).view(1, 1, -1)
-        return img.permute(1, 2, 0) * std + mean
+    mean = torch.tensor(mean).view(1, 1, -1)
+    std = torch.tensor(std).view(1, 1, -1)
+    return img.permute(1, 2, 0) * std + mean
 
 
 def make_prediction(model, dataset):
@@ -164,13 +164,10 @@ def make_prediction(model, dataset):
     with torch.no_grad():
         output = model(random_img.unsqueeze(0))
         pred = output.argmax().item()
-        predicted_label = class_names[pred]
-        actual_label = class_names[random_label]
+        predicted_label = disease_names[pred]
+        actual_label = disease_names[random_label]  
     
-    
-        
-    unnormalized_img = unnormalize_image(random_img)
-    
+    unnormalized_img = unnormalize_image(random_img)    
     fig, ax = plt.subplots(figsize=(3,3))
     fig.tight_layout()
     ax.imshow(unnormalized_img)
@@ -179,15 +176,30 @@ def make_prediction(model, dataset):
     ax.axis('off')
 
 
-def run_prediction(img_path, model=best_trained_model):
-        user_img = train_transforms(Image.open(img_path).convert('RGB'))
-        pred = torch.argmax(model(user_img.unsqueeze(0))).item()
-        prediction = class_names[pred]
-        unnormalized_user_img= unnormalize_image(user_img)
-        fig, ax = plt.subplots()
-        ax.imshow(unnormalized_user_img)
-        ax.axis('off')
-        ax.set_title(f'Predicted: {prediction}')
-        fig.show()
-        return prediction, class_names_dict[prediction];
+def predict_disease(img: Union[Path, Image.Image], model=best_trained_model)-> Union[float, str, str]:
+    """
+    Predicts cassava disease out of 4 classes ['cbb', 'cbsd', 'cgm', 'cmd'] or whether the plant is healthy
+
+    Args:
+        img (path | image): Plant Image path or Image to make prediction on
+        model: model to use in making the prediction
+    
+    Returns:
+        (confidence score of the predicted class, short form of the predicted class, predicted class in full)
+    """
+    try:
+        user_img = train_transforms(Image.open(img).convert('RGB'))
+    except:
+        user_img = train_transforms(img.convert('RGB'))
+    raw_pred = model(user_img.unsqueeze(0))
+    conf = ((torch.softmax(raw_pred, dim=-1)).max()*100).item()
+    max_pred = torch.argmax(raw_pred).item()
+    prediction = disease_names[max_pred]
+    unnormalized_user_img= unnormalize_image(user_img)
+    fig, ax = plt.subplots()
+    ax.imshow(unnormalized_user_img)
+    ax.axis('off')
+    ax.set_title(f'Predicted: {prediction}')
+    fig.show()
+    return conf, prediction, disease_dict[prediction]
 

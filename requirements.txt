@@ -1,6 +1,10 @@
 Flask==3.1.1
-gunicorn==23.0.0  # needed for Railway web deployment
-torch==2.2.2
-torchvision==0.17.2
-Pillow==10.2.0
-numpy==1.26.4
+gunicorn
+torch
+torchvision
+Pillow
+numpy
+matplotlib
+streamlit
+groq
+dotenv
