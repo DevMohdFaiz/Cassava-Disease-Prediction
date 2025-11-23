@@ -12,25 +12,16 @@ st.set_page_config(page_title="CassavaVision", page_icon="cv_icon.png", layout="
 
 st.markdown("""
     <style>
-    .main {
-        background: linear-gradient(120deg,var(--bg-1),var(--bg-2));
-    }
     .stApp {
-        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-    }
-    h1, h2, h3 {
-        color: #ffffff;
-    }
-    .upload-text {
-        color: #e94560;
-        font-size: 18px;
-        font-weight: bold;
-    }
-    .status-box {
-        background-color: red;
-        padding: 20px;
-        border-radius: 10px;
-        margin-top: 20px;
+        background: linear-gradient(120deg,#0f0c29,#302b63);
+    }.logo{
+        width:50px;
+        height:45px;
+        border-radius:12px;
+        background: linear-gradient(135deg,#6a11cb,#2575fc);
+        display:flex;align-items:center;justify-content:center;color:white;font-weight:800;
+        font-family:'Poppins',sans-serif;font-size:20px; flex-shrink:0;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.25);
     }
     </style>
 """, unsafe_allow_html=True)
@@ -49,17 +40,14 @@ disease_dict =  {
 }
 
 
-col1, col2 = st.columns([3, 1])
-with col1:
-    st.image('cv_icon.png', width=40)
-    st.markdown(f"### Instant cassava plant disease detection\n ##### Upload a cassava leaf for disease detection")
+
+img_path = "cv_icon.png"
+st.markdown(f"""<nav class="logo">CV</nav><br>""", unsafe_allow_html=True)
     
-with col2: 
-    st.markdown(f"<h2 style='text-align: right;'> {datetime.now().strftime('%H:%M')}</h2>", unsafe_allow_html=True)
+    # st.markdown(f"### Instant cassava plant disease detection\n ##### Upload a cassava leaf for disease detection")
 
-st.markdown("---")
 
-# Greeting
+
 hour = datetime.now().hour
 if hour < 12:
     greeting = "Good morning 👋"
@@ -68,7 +56,7 @@ elif hour < 18:
 else:
     greeting = "Good evening 👋"
 
-st.markdown(f"## {greeting}")
+st.markdown(f"""## {greeting}""")
 st.markdown("*Smart. Fast. Explainable. Try a clear photo for best results.*")
 
 st.markdown("<br>", unsafe_allow_html=True)
