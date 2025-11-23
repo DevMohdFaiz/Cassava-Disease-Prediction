@@ -8,3 +8,4 @@ matplotlib
 streamlit
 groq
 dotenv
+tqdm
