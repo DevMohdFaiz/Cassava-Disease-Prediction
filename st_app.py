@@ -52,7 +52,7 @@ disease_dict =  {
 col1, col2 = st.columns([3, 1])
 with col1:
     st.image('cv_icon.png', width=40)
-    st.markdown(f"### Instant plant disease detection\n ##### Upload a leaf and get a prediction")
+    st.markdown(f"### Instant cassava plant disease detection\n ##### Upload a cassava leaf for disease detection")
     
 with col2: 
     st.markdown(f"<h2 style='text-align: right;'> {datetime.now().strftime('%H:%M')}</h2>", unsafe_allow_html=True)
@@ -78,7 +78,7 @@ with tab1:
     col_upload, col_status = st.columns([2, 1])
 
     with col_upload:
-        st.markdown("### Upload an Image for Prediction")
+        st.markdown("### Upload an Image for Detection")
         
         uploaded_file = st.file_uploader("Choose Image", type=['png', 'jpg', 'jpeg'], help="Upload a clear photo of a cassava leaf")
         
