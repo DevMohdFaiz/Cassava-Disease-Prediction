@@ -10,11 +10,12 @@ from ai_bot import load_system_prompt, build_context, groq_chat
 
 st.set_page_config(page_title="CassavaVision", page_icon="cv_icon.png", layout="centered")
 
+
+# .stApp{background: linear-gradient(120deg,#0f0c29,#302b63);}
+
 st.markdown("""
     <style>
-    .stApp {
-        background: linear-gradient(120deg,#0f0c29,#302b63);
-    }.logo{
+        .logo{
         width:50px;
         height:45px;
         border-radius:12px;
@@ -30,6 +31,8 @@ if 'chat_history' not in st.session_state:
     st.session_state.chat_history = []
 if 'predictions' not in st.session_state:
     st.session_state.predictions = []
+if 'theme' not in st.session_state:
+    st.session_state.theme = 'dark'
 
 disease_dict =  {
     "cbb": "Cassava Bacterial Blight",
@@ -43,9 +46,6 @@ disease_dict =  {
 
 img_path = "cv_icon.png"
 st.markdown(f"""<nav class="logo">CV</nav><br>""", unsafe_allow_html=True)
-    
-    # st.markdown(f"### Instant cassava plant disease detection\n ##### Upload a cassava leaf for disease detection")
-
 
 
 hour = datetime.now().hour
@@ -55,6 +55,9 @@ elif hour < 18:
     greeting = "Good afternoon 👋"
 else:
     greeting = "Good evening 👋"
+
+
+
 
 st.markdown(f"""## {greeting}""")
 st.markdown("*Smart. Fast. Explainable. Try a clear photo for best results.*")
@@ -85,19 +88,19 @@ with tab1:
                     })
                     
                     if short_pred=='cbb':
-                        st.error(f"⚠️ **Oops, your cassava plant is infected with {long_pred}. {confidence:.2f}%**")
+                        st.markdown(f"""<div class='analysis-display'>⚠️ Oops, your cassava plant is infected with <strong>{long_pred}. {confidence:.2f}</strong>%</div>""", unsafe_allow_html=True)
                         st.markdown(f"[Learn more about {long_pred}](https://en.wikipedia.org/wiki/Bacterial_blight_of_cassava)")
                     elif short_pred == 'cbsd':
-                        st.error(f"⚠️ **Oops, your cassava plant is infected with {long_pred}. {confidence:.2f}%**")
+                        st.markdown(f"""<div class='analysis-display'>⚠️ Oops, your cassava plant is infected with <strong>{long_pred}. {confidence:.2f}</strong>%</div>""", unsafe_allow_html=True)
                         st.markdown(f"[Learn more about {long_pred}](https://en.wikipedia.org/wiki/Cassava_brown_streak_virus_disease)")
                     elif short_pred =='cgm':
-                        st.error(f"⚠️ **Oops, your cassava plant is infected with {long_pred}. {confidence:.2f}%**")
+                        st.markdown(f"""<div class='analysis-display'>⚠️ Oops, your cassava plant is infected with <strong>{long_pred}. {confidence:.2f}</strong>%</div>""", unsafe_allow_html=True)
                         st.markdown(f"[Learn more about {long_pred}](https://en.wikipedia.org/wiki/Cassava_mosaic_viruses)")
                     elif short_pred == 'cmd':
-                        st.error(f"⚠️ **Oops, your cassava plant is infected with {long_pred}. {confidence:.2f}%**")
+                        st.markdown(f"""<div class='analysis-display'>⚠️ Oops, your cassava plant is infected with <strong>{long_pred}. {confidence:.2f}</strong>%</div>""", unsafe_allow_html=True)
                         st.markdown(f"[Learn more about {long_pred}](https://en.wikipedia.org/wiki/Cassava_mosaic_viruses)")
                     else:                    
-                        st.success(f"✅ **Great news!** Your cassava plant appears to be **{long_pred} {confidence:.2f}%**")
+                        st.markdown(f"""<div class='analysis-display-healthy'>✅ Great news! Your cassava plant appears to be <strong>{long_pred}. {confidence:.2f}</strong>%""", unsafe_allow_html=True)
 
 
                     
@@ -122,7 +125,7 @@ with tab1:
 with tab2:
     system_prompt = load_system_prompt('simple_prompt.md')
     # st.text()
-    st.subheader("Your AI Assistant :)")
+    st.subheader("Your AI Assistant :)", divider='rainbow')
     if st.button('Clear chat'):
         st.session_state.chat_history = []
         st.rerun()
@@ -130,10 +133,12 @@ with tab2:
         for history in st.session_state.chat_history:                
             if history['role'] == 'user':
                 with st.chat_message('user'):
-                        st.markdown(history['content'], unsafe_allow_html=True)
+                    st.markdown(f"""
+                        <div class='msg-display'>{history['content']}</div>""", unsafe_allow_html=True)
             elif history['role']=='assistant':
                 with st.chat_message('assistant'):
-                    st.markdown(history['content'], unsafe_allow_html=True)
+                    st.markdown(f"""
+                        <div class='msg-display'>{history['content']}</div>""", unsafe_allow_html=True)
     else:
         st.info('History is empty')
 
@@ -158,6 +163,85 @@ with tab2:
 
 
 with st.sidebar:
+    st.markdown("## Theme")
+    col1, col2=st.columns(2)
+    with col1:
+        if st.button("🌙 Dark", use_container_width=True, 
+                     type="primary" if st.session_state.theme == 'dark' else "secondary"):
+            st.session_state.theme = 'dark'
+            st.rerun()
+    
+    with col2:
+        if st.button("☀️ Light", use_container_width=True,
+                     type="primary" if st.session_state.theme == 'light' else "secondary"):
+            st.session_state.theme = 'light'
+            st.rerun()
+    if st.session_state.theme == 'dark':
+        st.markdown("""
+        <style>
+            .stApp{
+                color: white;   
+                background: linear-gradient(120deg,#0f0c29,#302b63);
+            }.msg-display{
+                color: white;
+                background: black;
+                font-weight: 500;
+                padding: 10px;
+                margin-bottom: 10px;
+                border-radius: 4px;
+            }.analysis-display{
+                border: 1px solid blue;
+                border-radius: 4px;
+                background: rgba(248, 102, 102); 
+                font-weight: 500;   
+                padding: 5px;    
+            }.analysis-display-healthy{
+                border: 1px solid blue;
+                border-radius: 4px;
+                background: rgba(248, 102, 102); 
+                font-weight: 500;   
+                padding: 5px; 
+                background: rgba(77, 247, 204, 0.25);   
+            }.stTabs{
+            color: white;    
+            }
+        </style>
+    """, unsafe_allow_html=True)
+    elif st.session_state.theme == 'light':
+        st.markdown("""
+        <style>
+            .stApp{
+                color: black;   
+                background: white;
+            }.msg-display{
+                color: black;
+                background: white; 
+                font-weight: 500;
+                padding: 5px;
+                margin-bottom: 10px;
+                border-radius: 4px;
+            }.analysis-display{
+                border: 1px solid blue;
+                border-radius: 4px;
+                background: rgba(248, 102, 102); 
+                font-weight: 500;   
+                padding: 5px;    
+            }.analysis-display-healthy{
+                border: 1px solid blue;
+                border-radius: 4px;
+                background: rgba(77, 247, 204, 0.25); 
+                font-weight: 500;   
+                padding: 5px;    
+            }.stTabs button{
+                color: red;
+                background: white;
+                border-radius: 5px;
+                padding: 5px;
+                border: 1px solid grey;
+            }
+        </style>
+    """, unsafe_allow_html=True)
+        
     st.markdown("## 📖 About")
     st.markdown("""
     **CassavaVision** uses deep learning to detect diseases in cassava plants.
