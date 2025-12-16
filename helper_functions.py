@@ -1,14 +1,18 @@
 import random
 import os
+import clip
 import torch
 import matplotlib.pyplot as plt
 import torchvision.transforms as T
 import pandas as pd
+import numpy as np
 from PIL import Image
 from pathlib import Path
 from collections import Counter
 from tqdm.notebook import tqdm
 from typing import Tuple, Union
+from emb_helpers import OOD
+
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 disease_names = ['cbb', 'cbsd', 'cgm', 'cmd', 'healthy']
@@ -19,6 +23,14 @@ disease_dict =  {
     "cmd": "Cassava Mosaic Disease",
     "healthy": "Healthy (No Disease)"
 }
+model, clip_preprocess = clip.load("ViT-B/32", device=device)
+base_embeddings= np.load("models/img_emb_2025-12-10_17-43.npy")
+data_dir = Path('datasets/train/train')
+data_classes = ['cbb', 'cbsd', 'cgm', 'cmd', 'healthy']
+ood_helpers = OOD(
+                model=model, clip_preprocess=clip_preprocess, base_embeddings=base_embeddings,\
+                device=device, data_dir=data_dir, data_classes=disease_names
+    )
 
 train_transforms = T.Compose([T.Resize((320, 320)), T.RandomResizedCrop(300, scale=(0.8, 1.0)),
     T.RandomHorizontalFlip(),T.ToTensor(), T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
@@ -35,7 +47,7 @@ def plot_random_images(train_dir, classes, nrows, ncols):
         fig.suptitle('Sample Images')
         ax = ax.flatten()
 
-        for idx, axis in enumerate(ax):
+        for _, axis in enumerate(ax):
                 random_path = Path(os.path.join(train_dir, random.choice(classes)))
                 random_image = Path(os.path.join(random_path, random.choice(os.listdir(random_path))))
                 img_tensor = torch.tensor(plt.imread(random_image))
@@ -193,15 +205,20 @@ def predict_disease(img: Union[Path, Image.Image], model=best_trained_model)-> U
         user_img = train_transforms(Image.open(img).convert('RGB'))
     except:
         user_img = train_transforms(img.convert('RGB'))
-    raw_pred = model(user_img.unsqueeze(0))
-    conf = ((torch.softmax(raw_pred, dim=-1)).max()*100).item()
-    max_pred = torch.argmax(raw_pred).item()
-    prediction = disease_names[max_pred]
-    unnormalized_user_img= unnormalize_image(user_img)
-    fig, ax = plt.subplots()
-    ax.imshow(unnormalized_user_img)
-    ax.axis('off')
-    ax.set_title(f'Predicted: {prediction}')
-    fig.show()
-    return conf, prediction, disease_dict[prediction]
+    ood_score, _, _ = ood_helpers.analyze_img(img)
+    is_cassava = True if ood_score<0.7 else False
+    if not is_cassava:
+        return [f"{ood_score:.3f}"]
+    if is_cassava:
+        raw_pred = model(user_img.unsqueeze(0))
+        conf = ((torch.softmax(raw_pred, dim=-1)).max()*100).item()
+        max_pred = torch.argmax(raw_pred).item()
+        prediction = disease_names[max_pred]
+        unnormalized_user_img= unnormalize_image(user_img)
+        fig, ax = plt.subplots()
+        ax.imshow(unnormalized_user_img)
+        ax.axis('off')
+        ax.set_title(f'Predicted: {prediction}')
+        fig.show()
+        return ood_score,conf, prediction, disease_dict[prediction]
 

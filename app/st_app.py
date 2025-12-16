@@ -1,15 +1,18 @@
 import torch
-import io
+import clip
 import streamlit as st
 import torchvision.transforms as transforms
 from datetime import datetime
 from PIL import Image
 from pathlib import Path
-from helper_functions import predict_disease
+
 from ai_bot import load_system_prompt, build_context, groq_chat
+import importlib
+import helper_functions
+importlib.reload(helper_functions)
+from helper_functions import predict_disease
 
 st.set_page_config(page_title="CassavaVision", page_icon="cv_icon.png", layout="centered")
-
 
 # .stApp{background: linear-gradient(120deg,#0f0c29,#302b63);}
 
@@ -41,6 +44,7 @@ disease_dict =  {
     "cmd": "Cassava Mosaic Disease",
     "healthy": "Healthy (No Disease)"
 }
+
 
 
 
@@ -79,31 +83,32 @@ with tab1:
             
             if st.button("Analyze Image", type="primary", use_container_width=True):
                 with st.spinner("Analyzing image..."):
-                    confidence, short_pred, long_pred= predict_disease(image)               
-                    
-                    st.session_state.predictions.append({
+                    pred_result = predict_disease(image) 
+                    if len(pred_result)>1:
+                        ood_score, confidence, short_pred, long_pred=  pred_result
+                        st.session_state.predictions.append({
                         'time': datetime.now().strftime("%H:%M:%S"),
-                        'prediction': long_pred,
+                        'prediction': long_pred,    
                         'confidence': confidence
                     })
-                    
-                    if short_pred=='cbb':
-                        st.markdown(f"""<div class='analysis-display'>⚠️ Oops, your cassava plant is infected with <strong>{long_pred}. {confidence:.2f}</strong>%</div>""", unsafe_allow_html=True)
-                        st.markdown(f"[Learn more about {long_pred}](https://en.wikipedia.org/wiki/Bacterial_blight_of_cassava)")
-                    elif short_pred == 'cbsd':
-                        st.markdown(f"""<div class='analysis-display'>⚠️ Oops, your cassava plant is infected with <strong>{long_pred}. {confidence:.2f}</strong>%</div>""", unsafe_allow_html=True)
-                        st.markdown(f"[Learn more about {long_pred}](https://en.wikipedia.org/wiki/Cassava_brown_streak_virus_disease)")
-                    elif short_pred =='cgm':
-                        st.markdown(f"""<div class='analysis-display'>⚠️ Oops, your cassava plant is infected with <strong>{long_pred}. {confidence:.2f}</strong>%</div>""", unsafe_allow_html=True)
-                        st.markdown(f"[Learn more about {long_pred}](https://en.wikipedia.org/wiki/Cassava_mosaic_viruses)")
-                    elif short_pred == 'cmd':
-                        st.markdown(f"""<div class='analysis-display'>⚠️ Oops, your cassava plant is infected with <strong>{long_pred}. {confidence:.2f}</strong>%</div>""", unsafe_allow_html=True)
-                        st.markdown(f"[Learn more about {long_pred}](https://en.wikipedia.org/wiki/Cassava_mosaic_viruses)")
-                    else:                    
-                        st.markdown(f"""<div class='analysis-display-healthy'>✅ Great news! Your cassava plant appears to be <strong>{long_pred}. {confidence:.2f}</strong>%""", unsafe_allow_html=True)
-
-
-                    
+                        
+                        if short_pred=='cbb':
+                            st.markdown(f"""<div class='analysis-display'>⚠️ Oops, your cassava plant is infected with <strong>{long_pred}. {confidence:.2f}</strong>%</div>""", unsafe_allow_html=True)
+                            st.markdown(f"[Learn more about {long_pred}](https://en.wikipedia.org/wiki/Bacterial_blight_of_cassava)")
+                        elif short_pred == 'cbsd':
+                            st.markdown(f"""<div class='analysis-display'>⚠️ Oops, your cassava plant is infected with <strong>{long_pred}. {confidence:.2f}</strong>%</div>""", unsafe_allow_html=True)
+                            st.markdown(f"[Learn more about {long_pred}](https://en.wikipedia.org/wiki/Cassava_brown_streak_virus_disease)")
+                        elif short_pred =='cgm':
+                            st.markdown(f"""<div class='analysis-display'>⚠️ Oops, your cassava plant is infected with <strong>{long_pred}. {confidence:.2f}</strong>%</div>""", unsafe_allow_html=True)
+                            st.markdown(f"[Learn more about {long_pred}](https://en.wikipedia.org/wiki/Cassava_mosaic_viruses)")
+                        elif short_pred == 'cmd':
+                            st.markdown(f"""<div class='analysis-display'>⚠️ Oops, your cassava plant is infected with <strong>{long_pred}. {confidence:.2f}</strong>%</div>""", unsafe_allow_html=True)
+                            st.markdown(f"[Learn more about {long_pred}](https://en.wikipedia.org/wiki/Cassava_mosaic_viruses)")
+                        else:                    
+                            st.markdown(f"""<div class='analysis-display-healthy'>✅ Great news! Your cassava plant appears to be <strong>{long_pred}. {confidence:.2f}</strong>%""", unsafe_allow_html=True)
+                    else:
+                        st.markdown(f"""<div class='analysis-display'>⚠️ Cassava leaf not detected with an OOD score of <strong>{pred_result[0]}</strong></div>""", unsafe_allow_html=True)
+                          
 
     with col_status:
         st.markdown("## 📊 Status")
