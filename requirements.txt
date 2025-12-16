@@ -9,3 +9,4 @@ streamlit
 groq
 dotenv
 tqdm
+clip
