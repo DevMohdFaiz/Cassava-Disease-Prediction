@@ -1,5 +1,5 @@
-import torch
-import clip
+import os
+import sys
 import streamlit as st
 import torchvision.transforms as transforms
 from datetime import datetime
@@ -12,7 +12,16 @@ import helper_functions
 importlib.reload(helper_functions)
 from helper_functions import predict_disease
 
+current_dir = os.path.dirname(os.path.abspath('st_app'))
+root_dir = os.path.abspath(os.path.join(current_dir, ".."))
+
+if current_dir not in sys.path:
+    sys.path.insert(0, current_dir)
+if root_dir not in sys.path:
+    sys.path.insert(0, root_dir)
+
 st.set_page_config(page_title="CassavaVision", page_icon="cv_icon.png", layout="centered")
+
 
 # .stApp{background: linear-gradient(120deg,#0f0c29,#302b63);}
 
